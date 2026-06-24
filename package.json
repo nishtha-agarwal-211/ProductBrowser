@@ -10,7 +10,8 @@
     "seed": "node scripts/seed-products.js",
     "test": "jest --runInBand --forceExit",
     "test:unit": "jest tests/unit --forceExit",
-    "test:integration": "jest tests/integration --runInBand --forceExit"
+    "test:integration": "jest tests/integration --runInBand --forceExit",
+    "test:load": "node scripts/load-test.js"
   },
   "keywords": [
     "pagination",
@@ -30,6 +31,7 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "autocannon": "^8.0.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.4",
     "supertest": "^7.0.0"
