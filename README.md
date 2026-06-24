@@ -1,45 +1,177 @@
-# CodeVector — Product Browsing Backend
+<p align="center">
+  <h1 align="center">🛍️ ProductBrowser</h1>
+  <p align="center">
+    A high-performance full-stack product browsing application built to handle <strong>200,000+ products</strong> with <strong>cursor-based (keyset) pagination</strong> — ensuring zero duplicates and zero gaps, even under concurrent writes.
+  </p>
+</p>
 
-A high-performance backend system for browsing 200,000+ products with **cursor-based (keyset) pagination** that guarantees zero duplicates and zero gaps, even when data changes during user navigation.
+<p align="center">
+  <a href="https://product-browser-beta.vercel.app"><img src="https://img.shields.io/badge/Frontend-Vercel-black?style=for-the-badge&logo=vercel" alt="Frontend on Vercel" /></a>
+  <a href="https://productbrowser-ejeh.onrender.com/api/health"><img src="https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render" alt="Backend on Render" /></a>
+  <a href="https://neon.tech"><img src="https://img.shields.io/badge/Database-Neon-00E599?style=for-the-badge&logo=postgresql&logoColor=white" alt="Database on Neon" /></a>
+</p>
 
-## ✨ Features
-
-- **200K+ Products** — Seeded with realistic, categorized data
-- **Cursor-Based Pagination** — Data-consistent browsing (no duplicates/gaps)
-- **Category Filtering** — Electronics, Clothing, Home, Books, Sports
-- **4 Sort Modes** — Newest, Oldest, Price Low→High, Price High→Low
-- **< 100ms Response Time** — Optimized indexes for every query pattern
-- **React Frontend** — Dark-themed UI with glassmorphism, grid/list views
-- **Comprehensive Tests** — Unit + Integration test suite
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/Express-4.x-000000?style=flat-square&logo=express&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/PostgreSQL-14+-4169E1?style=flat-square&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white" />
+</p>
 
 ---
 
-## 🚀 Quick Start
+## 🌐 Live Demo
+
+| Service               | URL                                                                          |
+| --------------------- | ---------------------------------------------------------------------------- |
+| **🖥️ Frontend**       | [product-browser-beta.vercel.app](https://product-browser-beta.vercel.app)   |
+| **⚙️ Backend API**    | [productbrowser-ejeh.onrender.com](https://productbrowser-ejeh.onrender.com) |
+| **💚 Health Check**   | [/api/health](https://productbrowser-ejeh.onrender.com/api/health)           |
+| **📦 Products API**   | [/api/products](https://productbrowser-ejeh.onrender.com/api/products)       |
+| **📂 Categories API** | [/api/categories](https://productbrowser-ejeh.onrender.com/api/categories)   |
+
+> **Note:** The backend is hosted on Render's free tier, which spins down after inactivity. The first request may take ~30-50 seconds to wake up — subsequent requests are fast (<100ms).
+
+---
+
+## ✨ Features
+
+### Backend
+
+- **200K+ Products** — Seeded with realistic, categorized product data
+- **Cursor-Based Pagination** — Data-consistent browsing with zero duplicates/gaps
+- **Category Filtering** — Electronics, Clothing, Home, Books, Sports
+- **4 Sort Modes** — Newest, Oldest, Price Low→High, Price High→Low
+- **< 100ms Response Time** — Optimized composite indexes for every query pattern
+- **Parameterized Queries** — SQL injection prevention + prepared statement caching
+- **Connection Pooling** — 20 max connections via `pg.Pool`
+- **Graceful Shutdown** — Clean database disconnect on SIGTERM/SIGINT
+
+### Frontend
+
+- **Dark-Themed UI** — Modern glassmorphism design with gradients
+- **Grid & List Views** — Toggle between card grid and detailed list layouts
+- **Real-Time Filtering** — Instant category filtering and sort mode switching
+- **Load More Pagination** — Smooth cursor-based infinite loading
+- **Responsive Design** — Works on desktop, tablet, and mobile
+- **Loading & Error States** — Polished skeleton loaders and error handling
+
+### Developer Experience
+
+- **Comprehensive Tests** — Unit + Integration test suite with Jest
+- **Modular Architecture** — Clean separation of routes, controllers, services, and middleware
+- **Auto-Reload** — Nodemon for backend, Vite HMR for frontend
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    %% Styling
+    style Frontend fill:#1a1b26,stroke:#7aa2f7,stroke-width:2px,color:#a9b1d6
+    style Backend fill:#1a1b26,stroke:#9ece6a,stroke-width:2px,color:#a9b1d6
+    style Database fill:#1a1b26,stroke:#f7768e,stroke-width:2px,color:#a9b1d6
+
+    Frontend["🖥️ React Frontend (Vercel)<br/>Category Filter | Sort | Grid/List | Load More"]
+    Backend["⚙️ Express Backend (Render)<br/>CORS | Validation | Controller | Service | Query"]
+    Database["🗄️ PostgreSQL Database (Neon)<br/>200K Products | 4 Composite Indexes | SSL"]
+
+    Frontend -->|HTTPS /api/products?cursor=...| Backend
+    Backend -->|Keyset Pagination SQL| Database
+```
+
+### Project Structure
+
+```
+ProductBrowser/
+├── src/                              # Backend (Node.js + Express)
+│   ├── app.js                        # Express app setup, middleware, routes
+│   ├── server.js                     # Server entry point, graceful shutdown
+│   ├── db/
+│   │   ├── connection.js             # PostgreSQL pool (pg.Pool)
+│   │   └── migrate.js                # Schema creation + composite indexes
+│   ├── routes/
+│   │   └── products.js               # Route definitions
+│   ├── controllers/
+│   │   └── productController.js      # Request handlers
+│   ├── services/
+│   │   └── productService.js         # Core pagination logic ⭐
+│   ├── middleware/
+│   │   ├── errorHandler.js           # Centralized error middleware
+│   │   └── validateQuery.js          # Input validation & sanitization
+│   └── utils/
+│       └── cursor.js                 # Base64 cursor encode/decode
+│
+├── client/                           # Frontend (React + Vite)
+│   ├── src/
+│   │   ├── App.jsx                   # Main app shell
+│   │   ├── index.css                 # Design system (CSS variables, glassmorphism)
+│   │   ├── api/products.js           # API client with environment-aware base URL
+│   │   ├── hooks/useProducts.js      # Custom hook for data fetching + state
+│   │   └── components/
+│   │       ├── Header.jsx            # App header with product count
+│   │       ├── CategoryFilter.jsx    # Category pill buttons
+│   │       ├── SortSelector.jsx      # Sort dropdown
+│   │       ├── ViewToggle.jsx        # Grid/List view toggle
+│   │       ├── ProductCard.jsx       # Product display card
+│   │       ├── ProductGrid.jsx       # Responsive product grid/list layout
+│   │       ├── LoadMoreButton.jsx    # Cursor-based load more
+│   │       ├── LoadingState.jsx      # Skeleton loading placeholders
+│   │       ├── EmptyState.jsx        # No results display
+│   │       └── ErrorState.jsx        # Error display with retry
+│   ├── index.html
+│   └── vite.config.js                # Vite config with API proxy
+│
+├── scripts/
+│   └── seed-products.js              # 200K product seeder (batch inserts)
+│
+├── tests/
+│   ├── unit/
+│   │   ├── cursor.test.js            # Cursor encode/decode + edge cases
+│   │   └── productService.test.js    # Pagination logic + sort modes
+│   └── integration/
+│       └── products.test.js          # Full API endpoint tests
+│
+├── .env.example                      # Environment template
+├── .gitignore
+└── package.json
+```
+
+---
+
+## 🚀 Quick Start (Local Development)
 
 ### Prerequisites
 
-- **Node.js** 18+ 
+- **Node.js** 18+
 - **PostgreSQL** 14+ (local or [Neon](https://neon.tech) free tier)
 - **npm** 9+
 
 ### 1. Clone & Install
 
 ```bash
-git clone <your-repo-url>
-cd codevector
+git clone https://github.com/nishtha-agarwal-211/ProductBrowser.git
+cd ProductBrowser
 npm install
 cd client && npm install && cd ..
 ```
 
-### 2. Configure Database
+### 2. Configure Environment
 
 ```bash
-# Copy environment template
 cp .env.example .env
+```
 
-# Edit .env with your PostgreSQL connection string
-# For Neon: postgresql://user:pass@host/dbname?sslmode=require
-# For local: postgresql://user:pass@localhost:5432/codevector
+Edit `.env` with your PostgreSQL connection string:
+
+```env
+# For Neon (cloud):
+DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
+
+# For local PostgreSQL:
+DATABASE_URL=postgresql://user:pass@localhost:5432/codevector
 ```
 
 ### 3. Run Migrations
@@ -48,7 +180,7 @@ cp .env.example .env
 npm run migrate
 ```
 
-This creates the `products` table with optimized indexes.
+Creates the `products` table with 4 optimized composite indexes.
 
 ### 4. Seed 200K Products
 
@@ -56,54 +188,51 @@ This creates the `products` table with optimized indexes.
 npm run seed
 ```
 
-Inserts 200,000 products in < 5 seconds using batch inserts.
+Inserts 200,000 products in < 5 seconds using batch inserts (5,000 rows per INSERT).
 
-### 5. Start the Server
+### 5. Start Development Servers
 
 ```bash
-# Development (with auto-reload)
+# Terminal 1 — Backend (port 3000, auto-reload with nodemon)
 npm run dev
 
-# Production
-npm start
-```
-
-### 6. Start the Frontend (Development)
-
-```bash
+# Terminal 2 — Frontend (port 5173, HMR with Vite)
 cd client
 npm run dev
 ```
 
-The frontend runs at `http://localhost:5173` and proxies API calls to the backend.
-
-### 7. Build Frontend for Production
-
-```bash
-cd client
-npm run build
-```
-
-The built files are served by the Express backend automatically.
+Open [http://localhost:5173](http://localhost:5173) — the Vite dev server proxies `/api` requests to the backend.
 
 ---
 
 ## 📡 API Documentation
 
-### List Products (Paginated)
+### Base URL
 
-```
-GET /api/products
-```
+| Environment | URL                                        |
+| ----------- | ------------------------------------------ |
+| Production  | `https://productbrowser-ejeh.onrender.com` |
+| Development | `http://localhost:3000`                    |
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `category` | string | — | Filter: `electronics`, `clothing`, `home`, `books`, `sports` |
-| `cursor` | string | — | Pagination cursor from previous response |
-| `limit` | integer | 20 | Items per page (1–100) |
-| `sortBy` | string | `newest` | Sort: `newest`, `oldest`, `price-asc`, `price-desc` |
+### Endpoints
+
+#### `GET /api/products` — List Products (Paginated)
+
+| Parameter  | Type    | Default  | Description                                                  |
+| ---------- | ------- | -------- | ------------------------------------------------------------ |
+| `category` | string  | —        | Filter: `electronics`, `clothing`, `home`, `books`, `sports` |
+| `cursor`   | string  | —        | Pagination cursor from previous response                     |
+| `limit`    | integer | `20`     | Items per page (1–100)                                       |
+| `sortBy`   | string  | `newest` | Sort: `newest`, `oldest`, `price-asc`, `price-desc`          |
+
+**Example Request:**
+
+```bash
+curl "https://productbrowser-ejeh.onrender.com/api/products?category=electronics&limit=5&sortBy=price-asc"
+```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -120,108 +249,37 @@ GET /api/products
   "pagination": {
     "cursor": "eyJpZCI6NDIsImNyZWF0ZWRfYXQiOi...",
     "hasMore": true,
-    "count": 20,
+    "count": 5,
     "totalEstimate": 200000
   },
   "meta": {
     "category": "electronics",
-    "sortBy": "newest"
+    "sortBy": "price-asc"
   }
 }
 ```
 
-### Get Product Detail
+#### `GET /api/products/:id` — Get Product Detail
 
-```
-GET /api/products/:id
-```
-
-### List Categories
-
-```
-GET /api/categories
+```bash
+curl "https://productbrowser-ejeh.onrender.com/api/products/42"
 ```
 
-### Health Check
+#### `GET /api/categories` — List All Categories
 
-```
-GET /api/health
-```
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────┐
-│                  React Frontend                  │
-│  Category Filter │ Sort │ Grid/List │ Load More  │
-└──────────────────┬──────────────────────────────┘
-                   │ /api/products?cursor=...
-┌──────────────────▼──────────────────────────────┐
-│               Express Backend                    │
-│  Validation → Controller → Service → DB Query   │
-└──────────────────┬──────────────────────────────┘
-                   │ Keyset Pagination Query
-┌──────────────────▼──────────────────────────────┐
-│            PostgreSQL (Neon)                      │
-│  200K products │ 4 composite indexes             │
-└─────────────────────────────────────────────────┘
+```bash
+curl "https://productbrowser-ejeh.onrender.com/api/categories"
 ```
 
-### Project Structure
+#### `GET /api/health` — Health Check
 
-```
-codevector/
-├── src/
-│   ├── app.js                    # Express app setup
-│   ├── server.js                 # Server entry point
-│   ├── db/
-│   │   ├── connection.js         # PostgreSQL pool
-│   │   └── migrate.js            # Schema + indexes
-│   ├── routes/
-│   │   └── products.js           # Route definitions
-│   ├── controllers/
-│   │   └── productController.js  # Request handlers
-│   ├── services/
-│   │   └── productService.js     # Pagination logic ⭐
-│   ├── middleware/
-│   │   ├── errorHandler.js       # Error middleware
-│   │   └── validateQuery.js      # Input validation
-│   └── utils/
-│       └── cursor.js             # Cursor encode/decode
-├── scripts/
-│   └── seed-products.js          # 200K product seeder
-├── tests/
-│   ├── unit/
-│   │   ├── cursor.test.js        # Cursor utility tests
-│   │   └── productService.test.js # Pagination logic tests
-│   └── integration/
-│       └── products.test.js      # Full API tests
-├── client/                       # React frontend
-│   ├── src/
-│   │   ├── App.jsx               # Main app shell
-│   │   ├── index.css             # Design system
-│   │   ├── api/products.js       # API client
-│   │   ├── hooks/useProducts.js  # Data fetching hook
-│   │   └── components/
-│   │       ├── Header.jsx
-│   │       ├── CategoryFilter.jsx
-│   │       ├── SortSelector.jsx
-│   │       ├── ViewToggle.jsx
-│   │       ├── ProductCard.jsx
-│   │       ├── ProductGrid.jsx
-│   │       ├── LoadMoreButton.jsx
-│   │       ├── LoadingState.jsx
-│   │       ├── EmptyState.jsx
-│   │       └── ErrorState.jsx
-│   └── index.html
-└── package.json
+```bash
+curl "https://productbrowser-ejeh.onrender.com/api/health"
 ```
 
 ---
 
-## 🔑 Data Consistency: Keyset Pagination
+## 🔑 Why Keyset Pagination?
 
 ### The Problem with OFFSET Pagination
 
@@ -237,9 +295,11 @@ SELECT * FROM products ORDER BY created_at DESC LIMIT 20 OFFSET 20;
 -- ❌ OFFSET 20 now includes products from page 1! → DUPLICATES
 ```
 
+At 200K rows, `OFFSET 100000` also forces PostgreSQL to scan and discard 100,000 rows — getting slower as you paginate deeper.
+
 ### How Keyset Pagination Solves It
 
-Instead of saying "skip N rows," we say "get everything after this specific product":
+Instead of "skip N rows," we say "get everything after this specific product":
 
 ```sql
 -- Page 1 (no cursor)
@@ -256,11 +316,12 @@ LIMIT 21;
 ```
 
 **Why `(created_at, id)` composite key?**
-- `created_at` alone has ties (multiple products same second)
-- `id` breaks ties deterministically
-- Together they form a unique, sortable cursor
 
-**Result:** Even if 50 new products are inserted between page requests, the cursor points to a specific "position" in the sorted data that never shifts.
+- `created_at` alone has ties (multiple products created in the same second)
+- `id` breaks ties deterministically
+- Together they form a **unique, sortable cursor**
+
+**Result:** Even if 50 new products are inserted between page requests, the cursor points to a specific "position" in the sorted data that never shifts. Performance is O(1) regardless of page depth.
 
 ---
 
@@ -268,19 +329,25 @@ LIMIT 21;
 
 ### Index Strategy
 
-| Index | Covers | Query Pattern |
-|-------|--------|---------------|
-| `idx_products_created_id` | Default sort | `ORDER BY created_at DESC, id DESC` |
-| `idx_products_category_created_id` | Category + time sort | `WHERE category = ? ORDER BY created_at DESC` |
-| `idx_products_category_price_id` | Category + price sort | `WHERE category = ? ORDER BY price ASC` |
-| `idx_products_price_id` | Price sort (no filter) | `ORDER BY price ASC, id ASC` |
+Each sort mode has a dedicated composite index that PostgreSQL uses for **index-only scans**:
 
-### Optimizations
+| Index                              | Covers                 | Query Pattern                                 |
+| ---------------------------------- | ---------------------- | --------------------------------------------- |
+| `idx_products_created_id`          | Default sort           | `ORDER BY created_at DESC, id DESC`           |
+| `idx_products_category_created_id` | Category + time sort   | `WHERE category = ? ORDER BY created_at DESC` |
+| `idx_products_category_price_id`   | Category + price sort  | `WHERE category = ? ORDER BY price ASC`       |
+| `idx_products_price_id`            | Price sort (no filter) | `ORDER BY price ASC, id ASC`                  |
 
-- **Connection pooling**: 20 max connections via `pg.Pool`
-- **O(1) total count**: Uses `pg_class.reltuples` instead of `COUNT(*)`
-- **Batch seeding**: 5,000 rows per INSERT (200K in < 5s)
-- **Parameterized queries**: Prevent SQL injection + enable prepared statement caching
+### Other Optimizations
+
+| Optimization                             | Benefit                                                     |
+| ---------------------------------------- | ----------------------------------------------------------- |
+| **Connection pooling** (20 max)          | Handles concurrent requests efficiently                     |
+| **`pg_class.reltuples`** for total count | O(1) instead of `COUNT(*)` which is O(n)                    |
+| **Batch seeding** (5,000 rows/INSERT)    | Seeds 200K products in < 5 seconds                          |
+| **Parameterized queries**                | Prevents SQL injection + enables prepared statement caching |
+| **Limit+1 fetch strategy**               | Determines `hasMore` without a separate COUNT query         |
+| **Slow query logging** (> 200ms)         | Identifies performance bottlenecks in production            |
 
 ---
 
@@ -290,67 +357,102 @@ LIMIT 21;
 # Run all tests
 npm test
 
-# Unit tests only (no DB required)
+# Unit tests only (no database required)
 npm run test:unit
 
-# Integration tests (requires seeded DB)
+# Integration tests (requires a running, seeded database)
 npm run test:integration
 ```
 
-### Test Coverage
+### What's Tested
 
-- **Cursor utilities**: Encode/decode, validation, edge cases, SQL injection prevention
-- **Pagination logic**: All sort modes, parameter indexing, tiebreaking
-- **API endpoints**: Pagination, filtering, sorting, validation errors, data consistency
-- **Data consistency**: Verifies zero duplicates across 5 sequential pages
+| Suite                | Tests                                                                 |
+| -------------------- | --------------------------------------------------------------------- |
+| **Cursor Utilities** | Encode/decode, validation, malformed input, SQL injection prevention  |
+| **Pagination Logic** | All 4 sort modes, parameter indexing, tiebreaking edge cases          |
+| **API Endpoints**    | Pagination flow, category filtering, sort ordering, validation errors |
+| **Data Consistency** | Verifies zero duplicates across 5 sequential paginated pages          |
 
 ---
 
 ## 🚀 Deployment
 
-### Backend → Render
+This project is deployed across three services (all free tier):
 
-1. Create a [Render](https://render.com) account
-2. Create a new **Web Service** from your GitHub repo
-3. Set environment variables:
-   - `DATABASE_URL` → Your Neon connection string
-   - `NODE_ENV` → `production`
-4. Build command: `npm install && cd client && npm install && npm run build`
-5. Start command: `npm start`
+| Service      | Platform                     | Purpose                      |
+| ------------ | ---------------------------- | ---------------------------- |
+| **Frontend** | [Vercel](https://vercel.com) | React app (static build)     |
+| **Backend**  | [Render](https://render.com) | Node.js + Express API server |
+| **Database** | [Neon](https://neon.tech)    | PostgreSQL 14 (serverless)   |
 
-### Database → Neon
+### Deploy Your Own
 
-1. Create a [Neon](https://neon.tech) project (free tier = 0.5 GiB)
+#### 1. Database (Neon)
+
+1. Create a free project at [neon.tech](https://neon.tech)
 2. Copy the connection string
-3. Run migrations: `npm run migrate`
-4. Run seeder: `npm run seed`
+3. Run `npm run migrate` and `npm run seed` locally
+
+#### 2. Backend (Render)
+
+1. Create a **Web Service** on [render.com](https://render.com)
+2. Connect your GitHub repo
+3. **Build Command:** `npm install`
+4. **Start Command:** `npm start`
+5. **Environment Variables:**
+   - `DATABASE_URL` = your Neon connection string
+   - `NODE_ENV` = `production`
+
+#### 3. Frontend (Vercel)
+
+1. Import your repo on [vercel.com](https://vercel.com)
+2. **Root Directory:** `client`
+3. **Framework Preset:** Vite
+4. **Build Command:** `npm run build`
+5. **Output Directory:** `dist`
 
 ---
 
 ## 📝 Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| **Keyset over OFFSET** | Zero duplicates/gaps during concurrent writes |
-| **Base64 JSON cursors** | Debuggable, extensible, supports multiple sort fields |
-| **Composite (field, id) key** | Guarantees unique sort order even with timestamp ties |
-| **`pg_class` for count** | O(1) vs O(n) — essential at 200K+ scale |
-| **Limit+1 strategy** | Avoids a separate COUNT query to determine `hasMore` |
-| **PostgreSQL** | ACID compliance, mature indexing, Neon free tier |
-| **Vanilla CSS** | Full control, no framework lock-in |
+| Decision                              | Rationale                                                             |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| **Keyset over OFFSET pagination**     | Zero duplicates/gaps during concurrent writes; O(1) at any page depth |
+| **Base64 JSON cursors**               | Human-debuggable, extensible, supports multiple sort fields           |
+| **Composite `(field, id)` sort key**  | Guarantees unique sort order even with timestamp ties                 |
+| **`pg_class.reltuples` for count**    | O(1) vs O(n) — essential at 200K+ scale                               |
+| **Limit+1 fetch strategy**            | Avoids a separate COUNT query to determine `hasMore`                  |
+| **PostgreSQL (Neon)**                 | ACID compliance, mature indexing, serverless free tier                |
+| **Vanilla CSS with CSS variables**    | Full design control, no framework lock-in, consistent theming         |
+| **Separate frontend/backend deploys** | Independent scaling, Vercel CDN edge caching for static assets        |
 
 ---
 
 ## 🔮 Future Improvements
 
-- **Full-text search** — PostgreSQL `tsvector` for product name search
-- **Redis caching** — Cache category lists and hot product pages
-- **Infinite scroll** — Replace "Load More" with IntersectionObserver
-- **Product images** — S3/Cloudinary integration
-- **Rate limiting** — Express rate-limit middleware
-- **Soft deletes** — `deleted_at` column for data recovery
-- **API versioning** — `/api/v1/products` for backward compatibility
-- **WebSocket updates** — Real-time product count updates
+- **Full-Text Search** — PostgreSQL `tsvector` for product name search
+- **Redis Caching** — Cache category lists and hot product pages
+- **Infinite Scroll** — Replace "Load More" with IntersectionObserver
+- **Product Images** — S3/Cloudinary integration with lazy loading
+- **Rate Limiting** — Express rate-limit middleware for API protection
+- **API Versioning** — `/api/v1/products` for backward compatibility
+- **WebSocket Updates** — Real-time product count updates
+- **Soft Deletes** — `deleted_at` column for data recovery
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer          | Technology             | Purpose                        |
+| -------------- | ---------------------- | ------------------------------ |
+| **Runtime**    | Node.js 18+            | Server-side JavaScript         |
+| **Framework**  | Express 4.x            | HTTP routing & middleware      |
+| **Database**   | PostgreSQL 14+         | Relational data storage        |
+| **DB Client**  | node-postgres (pg)     | PostgreSQL driver with pooling |
+| **Frontend**   | React 18               | UI component library           |
+| **Build Tool** | Vite 5                 | Frontend bundling & HMR        |
+| **Testing**    | Jest + Supertest       | Unit & integration tests       |
+| **Hosting**    | Vercel + Render + Neon | Full-stack cloud deployment    |
 
 ---
 
