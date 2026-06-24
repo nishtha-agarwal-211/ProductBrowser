@@ -8,10 +8,21 @@
 require('dotenv').config();
 const app = require('./app');
 const { close } = require('./db/connection');
+const logger = require('./utils/logger');
 
 const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
+  logger.info(`🚀 CodeVector API Server started`, {
+    port: PORT,
+    mode: process.env.NODE_ENV || 'development',
+    endpoints: [
+      'GET /api/v1/products       Product listing',
+      'GET /api/v1/products/:id   Product detail',
+      'GET /api/v1/categories     Category list',
+      'GET /api/health            Health check',
+    ],
+  });
   console.log(`
 ╔══════════════════════════════════════════════╗
 ║                                              ║
@@ -21,9 +32,9 @@ const server = app.listen(PORT, () => {
 ║   Mode:    ${(process.env.NODE_ENV || 'development').padEnd(30)}║
 ║                                              ║
 ║   Endpoints:                                 ║
-║   GET /api/products       Product listing    ║
-║   GET /api/products/:id   Product detail     ║
-║   GET /api/categories     Category list      ║
+║   GET /api/v1/products    Product listing    ║
+║   GET /api/v1/products/:id Product detail    ║
+║   GET /api/v1/categories  Category list      ║
 ║   GET /api/health         Health check       ║
 ║                                              ║
 ╚══════════════════════════════════════════════╝
@@ -33,17 +44,17 @@ const server = app.listen(PORT, () => {
 // ── Graceful Shutdown ──────────────────────────────────────
 // Close database pool and HTTP server on process exit signals
 function gracefulShutdown(signal) {
-  console.log(`\n${signal} received. Shutting down gracefully...`);
+  logger.info(`${signal} received. Shutting down gracefully...`);
   
   server.close(async () => {
-    console.log('HTTP server closed.');
+    logger.info('HTTP server closed');
     await close();
     process.exit(0);
   });
 
   // Force shutdown after 10 seconds
   setTimeout(() => {
-    console.error('Forced shutdown after timeout.');
+    logger.error('Forced shutdown after timeout');
     process.exit(1);
   }, 10000);
 }

@@ -9,6 +9,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
+const logger = require('./utils/logger');
 const productRoutes = require('./routes/products');
 const { errorHandler } = require('./middleware/errorHandler');
 
@@ -28,15 +30,44 @@ app.use(cors({
 // Parse JSON request bodies
 app.use(express.json());
 
-// Request logging (skip in test mode)
+// ── Rate Limiting ──────────────────────────────────────────
+// Prevent abuse and protect free tier resources (Render, Neon)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,                  // limit each IP to 100 requests per windowMs
+  standardHeaders: true,     // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false,      // Disable `X-RateLimit-*` headers
+  message: {
+    success: false,
+    error: 'Too many requests, please try again later.',
+    code: 'RATE_LIMIT_EXCEEDED',
+    statusCode: 429,
+  },
+});
+app.use('/api/', apiLimiter);
+
+// ── Structured Request Logging ─────────────────────────────
+// Uses Winston for structured, leveled logging (skip in test mode)
 if (process.env.NODE_ENV !== 'test') {
   app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
       const duration = Date.now() - start;
       const status = res.statusCode;
-      const color = status >= 400 ? '\x1b[31m' : '\x1b[32m';
-      console.log(`${color}${req.method}\x1b[0m ${req.originalUrl} → ${status} (${duration}ms)`);
+      const logData = {
+        method: req.method,
+        url: req.originalUrl,
+        status,
+        duration: `${duration}ms`,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+      };
+
+      if (status >= 400) {
+        logger.warn('Request failed', logData);
+      } else {
+        logger.info('Request completed', logData);
+      }
     });
     next();
   });
@@ -48,9 +79,24 @@ const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientBuildPath));
 
 // ── API Routes ─────────────────────────────────────────────
+// Versioned routes (v1) — recommended for future compatibility
+app.use('/api/v1/products', productRoutes);
+
+// Backward-compatible unversioned routes (alias to v1)
 app.use('/api/products', productRoutes);
 
-// GET /api/categories — convenience alias (also available at /api/products/categories)
+// GET /api/v1/categories — convenience alias
+app.get('/api/v1/categories', async (req, res, next) => {
+  try {
+    const productService = require('./services/productService');
+    const categories = await productService.getCategories();
+    res.json({ success: true, data: categories });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/categories — backward-compatible unversioned alias
 app.get('/api/categories', async (req, res, next) => {
   try {
     const productService = require('./services/productService');
@@ -67,6 +113,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok', 
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    version: 'v1',
   });
 });
 
@@ -89,8 +136,8 @@ app.get('*', (req, res, next) => {
       res.status(200).json({
         message: 'API is running. Frontend not built yet.',
         api: {
-          products: '/api/products',
-          categories: '/api/categories',
+          products: '/api/v1/products',
+          categories: '/api/v1/categories',
           health: '/api/health',
         },
       });

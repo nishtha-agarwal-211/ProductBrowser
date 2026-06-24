@@ -5,6 +5,8 @@
  * structured JSON error responses with appropriate status codes.
  */
 
+const logger = require('../utils/logger');
+
 /**
  * Custom application error with status code and error code.
  */
@@ -22,12 +24,18 @@ class AppError extends Error {
  * Must have 4 parameters for Express to recognize it as an error handler.
  */
 function errorHandler(err, req, res, _next) {
-  // Log the error for debugging
-  if (process.env.NODE_ENV !== 'test') {
-    console.error(`[ERROR] ${err.code || 'UNKNOWN'}: ${err.message}`);
-    if (err.stack && process.env.NODE_ENV === 'development') {
-      console.error(err.stack);
-    }
+  // Structured error logging via Winston
+  const errorMeta = {
+    code: err.code || 'UNKNOWN',
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip,
+  };
+
+  if (err instanceof AppError) {
+    logger.warn('Application error', { ...errorMeta, statusCode: err.statusCode });
+  } else {
+    logger.error('Unhandled error', { ...errorMeta, message: err.message, stack: err.stack });
   }
 
   // Handle known application errors

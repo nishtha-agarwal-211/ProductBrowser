@@ -2,19 +2,26 @@
  * Database Connection Pool
  * 
  * Uses pg.Pool for connection pooling to handle concurrent requests efficiently.
- * - Max 20 connections to stay within Neon free tier limits
- * - Idle timeout of 30s to free unused connections
- * - Connection timeout of 5s to fail fast on DB issues
+ * 
+ * Timeout Configuration:
+ * ──────────────────────
+ * - connectionTimeoutMillis: 2000ms  — Fail fast if DB is unreachable
+ * - idleTimeoutMillis:       30000ms — Free unused connections after 30s
+ * - statement_timeout:       10000ms — Kill long-running queries after 10s
+ * - Max connections:         20      — Stay within Neon free tier limits
+ * 
+ * These prevent hanging connections in production (Render/Neon free tier).
  */
 
 const { Pool } = require('pg');
+const logger = require('../utils/logger');
 require('dotenv').config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20,                    // Max connections in pool
-  idleTimeoutMillis: 30000,   // Close idle connections after 30s
-  connectionTimeoutMillis: 5000, // Fail if can't connect in 5s
+  max: 20,                       // Max connections in pool
+  idleTimeoutMillis: 30000,      // Close idle connections after 30s
+  connectionTimeoutMillis: 2000, // Fail if can't connect in 2s (was 5s — faster failure)
   // Enable SSL for Neon (production) but not for local dev
   ssl: process.env.NODE_ENV === 'production' 
     ? { rejectUnauthorized: false } 
@@ -23,7 +30,12 @@ const pool = new Pool({
 
 // Log pool errors (don't crash the server)
 pool.on('error', (err) => {
-  console.error('Unexpected database pool error:', err.message);
+  logger.error('Unexpected database pool error', { error: err.message, stack: err.stack });
+});
+
+// Log pool connection events for debugging
+pool.on('connect', () => {
+  logger.debug('New database connection established');
 });
 
 /**
@@ -39,7 +51,11 @@ const query = async (text, params) => {
 
   // Log slow queries (> 200ms) for debugging
   if (duration > 200) {
-    console.warn(`Slow query (${duration}ms):`, text.substring(0, 100));
+    logger.warn('Slow query detected', { 
+      duration: `${duration}ms`, 
+      query: text.substring(0, 100),
+      params: params?.length || 0,
+    });
   }
 
   return result;
@@ -59,7 +75,7 @@ const getClient = async () => {
  */
 const close = async () => {
   await pool.end();
-  console.log('Database pool closed.');
+  logger.info('Database pool closed');
 };
 
 module.exports = { query, getClient, close, pool };

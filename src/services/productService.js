@@ -39,6 +39,7 @@
 
 const { query } = require('../db/connection');
 const { encodeCursor } = require('../utils/cursor');
+const logger = require('../utils/logger');
 
 /**
  * Fetch a paginated list of products with optional category filter.
@@ -60,6 +61,9 @@ async function listProducts({ category, cursor, limit, sortBy }) {
   const params = [];
   const conditions = [];
   let paramIndex = 1;
+
+  // Log the incoming request parameters for debugging
+  logger.info('Fetching products', { category, sortBy, limit, hasCursor: !!cursor });
 
   // ── Category filter ──────────────────────────────────────
   if (category) {
