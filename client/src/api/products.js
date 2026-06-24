@@ -5,7 +5,9 @@
  * Uses the Vite dev proxy in development and relative URLs in production.
  */
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.PROD
+  ? 'https://productbrowser-ejeh.onrender.com/api'
+  : '/api';
 
 /**
  * Fetch products with pagination, filtering, and sorting.
